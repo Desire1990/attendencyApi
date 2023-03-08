@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 
+
 class TokenPairSerializer(TokenObtainPairSerializer):
 	def validate(self, attrs):
 		data = super(TokenPairSerializer, self).validate(attrs)
@@ -16,6 +17,12 @@ class TokenPairSerializer(TokenObtainPairSerializer):
 		data['username'] = self.user.username
 		data['first_name'] = self.user.first_name
 		data['last_name'] = self.user.last_name
+		if self.user.utilisateur.agence:
+			var = self.user.utilisateur
+			data['agence'] = AgenceSerializer(var.agence, many=False).data
+		if self.user.utilisateur.service:
+			var = self.user.utilisateur
+			data['service'] = ServiceSerializer(var.service, many=False).data
 		data['is_staff'] = self.user.is_staff
 		return data
 
@@ -62,7 +69,27 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 
+class AgenceSerializer(serializers.ModelSerializer):
+	def to_representation(self, instance):
+		representation = super().to_representation(instance)
+		representation['user'] = UserSerializer(instance.user, many=False).data
+		user = UserSerializer(instance.user, many=False).data
+		representation['user'] = {'id': user.get(
+			'id'), 'username': user.get('username')}
+		return representation
+
+	class Meta:
+		model = Agence
+		fields = "__all__"
+
+
 class ServiceSerializer(serializers.ModelSerializer):
+	def to_representation(self, instance):
+		representation = super().to_representation(instance)
+		representation['user'] = UserSerializer(instance.user, many=False).data
+		representation['agence'] = AgenceSerializer(instance.agence, many=False).data
+		return representation
+
 	class Meta:
 		model = Service
 		fields = "__all__"
@@ -76,6 +103,7 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 		representation['user'] = {'id': user.id, 'username': user.username,
 								  'first_name': user.first_name, 'last_name': user.last_name, 'email': user.email, 'groups': group}
 		representation['service'] = ServiceSerializer(instance.service, many=False).data
+		representation['agence'] = AgenceSerializer(instance.agence, many=False).data
 		return representation
 	user = UserSerializer()
 
@@ -100,7 +128,8 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 		if password:
 			user.set_password(password)
 
-		instance.service = validated_data.get('service', instance.service)
+		instance.departement = validated_data.get('departement', instance.departement)
+		instance.agence = validated_data.get('agence', instance.agence)
 		group_user = user_data.get('groups')
 		print(user)
 		print(group_user)
@@ -118,3 +147,27 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 class PasswordResetSerializer(serializers.Serializer):
 	reset_code = serializers.CharField(required=True)
 	new_password = serializers.CharField(required=True)
+
+
+class AttendanceSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Attendance
+		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
+		fields = '__all__'
+		depth=1
+
+
+class LeaveSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Leave
+		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
+		fields = '__all__'
+		depth=1
+
+
+class QuotationSerializer(serializers.ModelSerializer):
+	class Meta:
+		model = Quotation
+		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
+		fields = '__all__'
+		depth=1
