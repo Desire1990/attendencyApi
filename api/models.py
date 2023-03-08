@@ -32,9 +32,20 @@ LEAVE_TYPE = (
 	('STUDY','Study Leave'),
 )
 
+class Agence(models.Model):
+	id = models.SmallAutoField(primary_key=True)
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	name = models.CharField(max_length=200, null=True, blank=False)
+	description = models.CharField(max_length=200, null=True, blank=False)
+	created = models.DateTimeField(auto_now_add=True)
+
+	def __str__(self):
+		return f'{self.name}'
 
 class Service(models.Model):
 	id = models.SmallAutoField(primary_key=True)
+	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	agence=models.ForeignKey(Agence, on_delete=models.CASCADE)
 	name = models.CharField(max_length=125, unique=True)
 	description = models.CharField(max_length=125,null=True,blank=True)
 	created = models.DateTimeField(verbose_name=_('Created'),auto_now_add=True)
@@ -54,6 +65,8 @@ class Utilisateur(models.Model):
 		)
 	id = models.SmallAutoField(primary_key=True)
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
+	service = models.ForeignKey(Service, on_delete=models.CASCADE)
+	agence = models.ForeignKey(Agence, on_delete=models.CASCADE)
 	avatar  = models.ImageField(null=True, blank=True)
 	is_valid = models.BooleanField(default = False)
 	service = models.ForeignKey(Service,on_delete=models.CASCADE, null=True)
@@ -64,7 +77,7 @@ class Utilisateur(models.Model):
 	joined = models.DateTimeField(default=timezone.now, editable=False)
 	birthday = models.DateField(_('Birthday'),blank=False,null=False)
 	education = models.CharField(_('Education'),help_text='highest educational standard ie. your last level of schooling',max_length=20,choices=EDUCATIONAL_LEVEL,blank=False,null=True)
-	fingerprint = models.CharField(max_length=1000, null=False, blank=False)
+	fingerprint = models.CharField(max_length=10000)
 	def __str__(self):
 
 		return f'{self.user.username}' 
