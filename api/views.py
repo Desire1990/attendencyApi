@@ -1,7 +1,6 @@
 from .dependencies import *
 
 
-
 class Pagination(PageNumberPagination):
 	page_size = 15000
 	def get_paginated_response(self, data):
@@ -23,6 +22,7 @@ class GroupViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 	permission_classes = IsAuthenticated,
 	queryset = Group.objects.all()
 	serializer_class = GroupSerializer
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -98,6 +98,65 @@ class UserViewSet(viewsets.ModelViewSet):
 		user.save()
 		return Response({'status': 'success'}, 204)
 
+# Views for Admins
+
+class AgenceViewset(viewsets.ModelViewSet):
+	serializer_class = AgenceSerializer
+	queryset = Agence.objects.all().order_by('name')
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
+	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+	search_fields = ['name']
+	filterset_fields = ['name']
+
+	def get_queryset(self):
+		queryset = Agence.objects.all().order_by('name')
+		du = self.request.query_params.get('du')
+		au = self.request.query_params.get('au')
+
+		if du is not None:
+			queryset = queryset.filter(date__gte=du, date__lte=au)
+		return queryset
+
+	@transaction.atomic()
+	def create(self, request):
+		data = request.data
+		name = data.get('name')
+		agence: Agence = Agence(
+			user=request.user,
+			name=name
+		)
+		agence.save()
+		serializer = AgenceSerializer(agence, many=False).data
+		return Response({"status": "Agence cree avec succès"}, 201)
+
+
+class ServiceViewset(viewsets.ModelViewSet):
+	serializer_class = ServiceSerializer
+	queryset = Service.objects.all().order_by('agence__name', 'name')
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
+	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+	filterset_fields = {
+		'agence': ['exact'],
+	}
+	search_fields = ['name', 'agence__name']
+
+	@transaction.atomic()
+	def create(self, request):
+		data = request.data
+		agence: Agence = Agence.objects.get(id=int(data.get('agence')))
+		name = data.get('name')
+		service: Service = Service(
+			user=request.user,
+			agence=agence,
+			name=name
+		)
+		service.save()
+		serializer = ServiceSerializer(service, many=False).data
+		return Response({"status": "service cree avec succès"}, 201)
+
+
 class UtilisateurViewset(viewsets.ModelViewSet):
 	serializer_class = UtilisateurSerializer
 	queryset = Utilisateur.objects.all().order_by('-id')
@@ -106,16 +165,17 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 	filterset_fields = {
 		'service': ['exact'],
+		'agence': ['exact'],
 	}
 	search_fields = ['user__username', 'user__first_name',
-					 'user__last_name', 'service__name']
+					 'user__last_name', 'service__name', 'agence__name']
 
 	@transaction.atomic()
 	def create(self, request):
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		service = serializer.validated_data['service']
-		decanat = serializer.validated_data['decanat']
+		agence = serializer.validated_data['agence']
 		user = User(
 			username=serializer.validated_data['user']['username'],
 			first_name=serializer.validated_data['user']['first_name'],
@@ -126,6 +186,7 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 		utilisateur = Utilisateur(
 			user=user,
 			service=service,
+			agence=agence,
 		)
 		user.save()
 		groups = serializer.validated_data['user']['groups']
@@ -155,8 +216,8 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 		utilisateur.save()
 
 		send_mail(
-			subject=f"{reset} est votre code de réinitialisation de votre compte gestion personnelle",
-			message=f"Nous avons reçu une demande de réinitialisation de votre mot de passe gestion personnelle. \nEntrez le code de réinitialisation du mot de passe suivant: \n\n{reset}\n\nVous n'avez pas demandé ce changement?\nSi vous n'avez pas demandé de nouveau mot de passe, veuillez signaler votre Administrateur.",
+			subject=f"{reset} est votre code de réinitialisation de votre compte gestion perso",
+			message=f"Nous avons reçu une demande de réinitialisation de votre mot de passe gestion perso. \nEntrez le code de réinitialisation du mot de passe suivant: \n\n{reset}\n\nVous n'avez pas demandé ce changement?\nSi vous n'avez pas demandé de nouveau mot de passe, veuillez signaler votre Administrateur.",
 			from_email=None,
 			recipient_list=[email],
 			fail_silently=False,
@@ -180,3 +241,25 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 			return Response({"status": "succes"}, 200)
 		else:
 			return Response({"status": "echec"}, 401)
+
+
+
+class AttendanceViewSet(viewsets.ModelViewSet):
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
+	queryset = Attendance.objects.all()
+	serializer_class = AttendanceSerializer
+
+
+class LeaveViewSet(viewsets.ModelViewSet):
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
+	queryset = Leave.objects.all()
+	serializer_class = LeaveSerializer
+
+
+class QuotationViewSet(viewsets.ModelViewSet):
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
+	queryset = Quotation.objects.all()
+	serializer_class = QuotationSerializer
