@@ -102,15 +102,15 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class AgenceViewset(viewsets.ModelViewSet):
 	serializer_class = AgenceSerializer
-	queryset = Agence.objects.all().order_by('name')
+	queryset = Agence.objects.all().order_by('nom')
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-	search_fields = ['name']
-	filterset_fields = ['name']
+	search_fields = ['nom']
+	filterset_fields = ['nom']
 
 	def get_queryset(self):
-		queryset = Agence.objects.all().order_by('name')
+		queryset = Agence.objects.all().order_by('nom')
 		du = self.request.query_params.get('du')
 		au = self.request.query_params.get('au')
 
@@ -121,10 +121,10 @@ class AgenceViewset(viewsets.ModelViewSet):
 	@transaction.atomic()
 	def create(self, request):
 		data = request.data
-		name = data.get('name')
+		nom = data.get('nom')
 		agence: Agence = Agence(
 			user=request.user,
-			name=name
+			nom=nom
 		)
 		agence.save()
 		serializer = AgenceSerializer(agence, many=False).data
@@ -133,33 +133,33 @@ class AgenceViewset(viewsets.ModelViewSet):
 
 class ServiceViewset(viewsets.ModelViewSet):
 	serializer_class = ServiceSerializer
-	queryset = Service.objects.all().order_by('agence__name', 'name')
+	queryset = Service.objects.all().order_by('agence__nom', 'nom')
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 	filterset_fields = {
 		'agence': ['exact'],
 	}
-	search_fields = ['name', 'agence__name']
+	search_fields = ['nom', 'agence__nom']
 
 	@transaction.atomic()
 	def create(self, request):
 		data = request.data
 		agence: Agence = Agence.objects.get(id=int(data.get('agence')))
-		name = data.get('name')
+		nom = data.get('nom')
 		service: Service = Service(
 			user=request.user,
 			agence=agence,
-			name=name
+			nom=nom
 		)
 		service.save()
 		serializer = ServiceSerializer(service, many=False).data
 		return Response({"status": "service cree avec succès"}, 201)
 
 
-class UtilisateurViewset(viewsets.ModelViewSet):
+class EmployeViewset(viewsets.ModelViewSet):
 	serializer_class = UtilisateurSerializer
-	queryset = Utilisateur.objects.all().order_by('-id')
+	queryset = Employe.objects.all().order_by('-id')
 	#authentication_classes = [JWTAuthentication, SessionAuthentication]
 	#permission_classes = IsAuthenticated,
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
@@ -168,7 +168,7 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 		'agence': ['exact'],
 	}
 	search_fields = ['user__username', 'user__first_name',
-					 'user__last_name', 'service__name', 'agence__name']
+					 'user__last_name', 'service__nom', 'agence__nom']
 
 	@transaction.atomic()
 	def create(self, request):
@@ -230,7 +230,7 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 		reset_code = request.data['reset_code']
 		new_password = request.data['new_password']
 
-		utilisateurs = Utilisateur.objects.filter(reset=reset_code)
+		utilisateurs = Employe.objects.filter(reset=reset_code)
 		if utilisateurs:
 			utilisateur = utilisateurs.first()
 			user = utilisateur.user
@@ -244,17 +244,17 @@ class UtilisateurViewset(viewsets.ModelViewSet):
 
 
 
-class AttendanceViewSet(viewsets.ModelViewSet):
+class PresenceViewSet(viewsets.ModelViewSet):
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
-	queryset = Attendance.objects.all()
+	queryset = Presence.objects.all()
 	serializer_class = AttendanceSerializer
 
 
-class LeaveViewSet(viewsets.ModelViewSet):
+class CongeViewSet(viewsets.ModelViewSet):
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
-	queryset = Leave.objects.all()
+	queryset = Conge.objects.all()
 	serializer_class = LeaveSerializer
 
 

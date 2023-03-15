@@ -140,7 +140,7 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 		return instance
 
 	class Meta:
-		model = Utilisateur
+		model = Employe
 		fields = "__all__"
 
 
@@ -151,7 +151,7 @@ class PasswordResetSerializer(serializers.Serializer):
 
 class AttendanceSerializer(serializers.ModelSerializer):
 	class Meta:
-		model = Attendance
+		model = Presence
 		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
 		fields = '__all__'
 		depth=1
@@ -159,7 +159,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
 class LeaveSerializer(serializers.ModelSerializer):
 	class Meta:
-		model = Leave
+		model = Conge
 		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
 		fields = '__all__'
 		depth=1

@@ -4,7 +4,6 @@ from django.utils import timezone
 import datetime
 import time
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext as _
 
 STATUS = (
 	('PRESENT', 'PRESENT'),
@@ -35,27 +34,27 @@ LEAVE_TYPE = (
 class Agence(models.Model):
 	id = models.SmallAutoField(primary_key=True)
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
-	name = models.CharField(max_length=200, null=True, blank=False)
+	nom = models.CharField(max_length=200, null=True, blank=False)
 	description = models.CharField(max_length=200, null=True, blank=False)
 	created = models.DateTimeField(auto_now_add=True)
 
 	def __str__(self):
-		return f'{self.name}'
+		return f'{self.nom}'
 
 class Service(models.Model):
 	id = models.SmallAutoField(primary_key=True)
 	user = models.OneToOneField(User, on_delete=models.CASCADE)
 	agence=models.ForeignKey(Agence, on_delete=models.CASCADE)
-	name = models.CharField(max_length=125, unique=True)
+	nom = models.CharField(max_length=125, unique=True)
 	description = models.CharField(max_length=125,null=True,blank=True)
-	created = models.DateTimeField(verbose_name=_('Created'),auto_now_add=True)
-	updated = models.DateTimeField(verbose_name=_('Updated'),auto_now=True)
+	created = models.DateTimeField(auto_now_add=True)
+	updated = models.DateTimeField(auto_now=True)
 
 
 	def __str__(self):
-		return self.name
+		return self.nom
 
-class Utilisateur(models.Model):
+class Employe(models.Model):
 	STATUS = (
 		('MARRIED','Married'),
 		('SINGLE','Single'),
@@ -71,12 +70,12 @@ class Utilisateur(models.Model):
 	is_valid = models.BooleanField(default = False)
 	service = models.ForeignKey(Service,on_delete=models.CASCADE, null=True)
 	mobile = models.CharField(max_length=15)
-	status = models.CharField(_('Marital Status'),max_length=10,choices=STATUS,blank=False,null=True)
-	address = models.CharField(max_length=100, default='')
-	gender = models.CharField(choices=GENDER, max_length=10)
+	status = models.CharField(max_length=10,choices=STATUS,blank=False,null=True)
+	addresse = models.CharField(max_length=100, default='')
+	genre = models.CharField(choices=GENDER, max_length=10)
 	joined = models.DateTimeField(default=timezone.now, editable=False)
-	birthday = models.DateField(_('Birthday'),blank=False,null=False)
-	education = models.CharField(_('Education'),help_text='highest educational standard ie. your last level of schooling',max_length=20,choices=EDUCATIONAL_LEVEL,blank=False,null=True)
+	date_naissance = models.DateField(blank=False,null=False)
+	education = models.CharField(help_text='highest educational standard ie. your last level of schooling',max_length=20,choices=EDUCATIONAL_LEVEL,blank=False,null=True)
 	fingerprint = models.CharField(max_length=10000)
 	def __str__(self):
 
@@ -84,46 +83,47 @@ class Utilisateur(models.Model):
 
    
 
-class Attendance (models.Model):
+class Presence (models.Model):
 	id = models.SmallAutoField(primary_key=True)
-	utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, null=True)
-	start_time = models.DateTimeField(blank=True, null=True)
-	end_time = models.DateTimeField(blank=True, null=True)
+	employe = models.ForeignKey(Employe, on_delete=models.CASCADE, null=True)
+	date_de_debut = models.DateTimeField(blank=True, null=True)
+	date_de_fin = models.DateTimeField(blank=True, null=True)
 	Approved_by = models.CharField(max_length = 50, help_text = 'Approved by ...')
 	hours = models.FloatField(blank=True, null=True, editable=False)
 
 	def save(self, *args, **kwargs):
-		if self.start_time and self.end_time:
-			self.hours = (self.end_time - self.start_time).seconds // 3600
-		super(Attendance, self).save(*args, **kwargs)
+		if self.date_de_debut and self.end_time:
+			self.hours = (self.end_time - self.date_de_debut).seconds // 3600
+		super(Presence, self).save(*args, **kwargs)
 
 
 	
 	def __str__(self):
-		return 'Attendance -> '+str(self.hours) +'h'' -> ' + str(self.utilisateur)
+		return 'Presence -> '+str(self.hours) +'h'' -> ' + str(self.utilisateur)
 
 
-class Leave(models.Model):
+class Conge(models.Model):
 	id = models.SmallAutoField(primary_key=True)
-	utilisateur = models.ForeignKey(Utilisateur,on_delete=models.CASCADE,default=1)
-	startdate = models.DateField(verbose_name=_('Start Date'),help_text='leave start date is on ..',null=True,blank=False)
-	enddate = models.DateField(verbose_name=_('End Date'),help_text='coming back on ...',null=True,blank=False)
-	leavetype = models.CharField(choices=LEAVE_TYPE,max_length=25,null=True,blank=False)
-	reason = models.CharField(verbose_name=_('Reason for Leave'),max_length=255,help_text='add additional information for leave',null=True,blank=True)
-	defaultdays = models.PositiveIntegerField(verbose_name=_('Leave days per year counter'), null=True,blank=True)
-	status = models.CharField(max_length=12,default='pending') #pending,approved,rejected,cancelled
+	employe = models.ForeignKey(Employe,on_delete=models.CASCADE,default=1)
+	date_de_debut = models.DateField(help_text='leave start date is on ..',null=True,blank=False)
+	date_de_fin = models.DateField(help_text='coming back on ...',null=True,blank=False)
+	type_de_conge = models.CharField(choices=LEAVE_TYPE,max_length=25,null=True,blank=False)
+	raison = models.CharField(max_length=255,help_text='add additional information for leave',null=True,blank=True)
+	jours_par_defaut = models.PositiveIntegerField( null=True,blank=True)
+	statut = models.CharField(max_length=12,default='pending') #pending,approved,rejected,cancelled
 	is_approved = models.BooleanField(default=False) #hide
 	updated = models.DateTimeField(auto_now=True, auto_now_add=False)
 	created = models.DateTimeField(auto_now=False, auto_now_add=True)
 	Approved_by = models.CharField(max_length=50, null=True, blank=False)
 
 	def __str__(self):
-		return self.utilisateur
+		return self.employe
 
 class Quotation(models.Model):
 	id = models.SmallAutoField(primary_key=True)
-	utilisateur = models.ForeignKey(Utilisateur, on_delete=models.CASCADE)
+	# presence
+	employe = models.ForeignKey(Employe, on_delete=models.CASCADE)
 	mark = models.FloatField(default=0)
 
 	def __str__(self):
-		return self.utilisateur
+		return self.employe
