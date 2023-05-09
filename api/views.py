@@ -2,7 +2,7 @@ from .dependencies import *
 
 
 class Pagination(PageNumberPagination):
-	page_size = 15000
+	page_size = 10
 	def get_paginated_response(self, data):
 		return Response(OrderedDict([
 			('next', self.get_next_link()),
@@ -109,52 +109,57 @@ class AgenceViewset(viewsets.ModelViewSet):
 	search_fields = ['nom']
 	filterset_fields = ['nom']
 
-	def get_queryset(self):
-		queryset = Agence.objects.all().order_by('nom')
-		du = self.request.query_params.get('du')
-		au = self.request.query_params.get('au')
-
-		if du is not None:
-			queryset = queryset.filter(date__gte=du, date__lte=au)
-		return queryset
-
-	@transaction.atomic()
+	@transaction.atomic
 	def create(self, request):
-		data = request.data
-		nom = data.get('nom')
-		agence: Agence = Agence(
-			user=request.user,
-			nom=nom
-		)
+		data = self.request.data
+		nom = (data.get('nom'))
+		description = (data.get('description'))
+		agence = Agence(
+			nom=nom,
+			description=description,
+			)
 		agence.save()
-		serializer = AgenceSerializer(agence, many=False).data
-		return Response({"status": "Agence cree avec succès"}, 201)
+		serializer = AgenceSerializer(agence, many=False, context={"request":request}).data
+		return Response(serializer,200)
+	
+	def patch(self, request, *args, **kwargs):
+		return self.update(request, *args, **kwargs)
 
+	@transaction.atomic
+	def destroy(self, request, *args, **kwargs):
+		agence = self.get_object()
+		agence.delete()
+		return Response(None, 204)
 
 class ServiceViewset(viewsets.ModelViewSet):
 	serializer_class = ServiceSerializer
-	queryset = Service.objects.all().order_by('agence__nom', 'nom')
+	queryset = Service.objects.all().order_by('nom')
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-	filterset_fields = {
-		'agence': ['exact'],
-	}
-	search_fields = ['nom', 'agence__nom']
+	search_fields = ['nom']
 
-	@transaction.atomic()
+	@transaction.atomic
 	def create(self, request):
-		data = request.data
-		agence: Agence = Agence.objects.get(id=int(data.get('agence')))
-		nom = data.get('nom')
-		service: Service = Service(
-			user=request.user,
-			agence=agence,
-			nom=nom
-		)
+		data = self.request.data
+		nom = (data.get('nom'))
+		description = (data.get('description'))
+		service = Service(
+			nom=nom,
+			description=description,
+			)
 		service.save()
-		serializer = ServiceSerializer(service, many=False).data
-		return Response({"status": "service cree avec succès"}, 201)
+		serializer = ServiceSerializer(service, many=False, context={"request":request}).data
+		return Response(serializer,200)
+	
+	def patch(self, request, *args, **kwargs):
+		return self.update(request, *args, **kwargs)
+
+	@transaction.atomic
+	def destroy(self, request, *args, **kwargs):
+		service = self.get_object()
+		service.delete()
+		return Response(None, 204)
 
 
 class EmployeViewset(viewsets.ModelViewSet):
@@ -176,6 +181,15 @@ class EmployeViewset(viewsets.ModelViewSet):
 		serializer.is_valid(raise_exception=True)
 		service = serializer.validated_data['service']
 		agence = serializer.validated_data['agence']
+		date_naissance = serializer.validated_data['date_naissance']
+		education = serializer.validated_data['education']
+		fingerprint = serializer.validated_data['fingerprint']
+		genre = serializer.validated_data['genre']
+		status = serializer.validated_data['status']
+		addresse = serializer.validated_data['addresse']
+		matricule = serializer.validated_data['matricule']
+		mobile = serializer.validated_data['mobile']
+		avatar = serializer.validated_data['avatar']
 		user = User(
 			username=serializer.validated_data['user']['username'],
 			first_name=serializer.validated_data['user']['first_name'],
@@ -183,10 +197,19 @@ class EmployeViewset(viewsets.ModelViewSet):
 			email=serializer.validated_data['user']['email']
 		)
 		user.set_password(serializer.validated_data['user']['password'])
-		utilisateur = Utilisateur(
+		utilisateur = Employe(
 			user=user,
 			service=service,
+			avatar=avatar,
 			agence=agence,
+			date_naissance=date_naissance,
+			education=education,
+			fingerprint=fingerprint,
+			genre=genre,
+			status=status,
+			matricule=matricule,
+			addresse=addresse,
+			mobile=mobile,
 		)
 		user.save()
 		groups = serializer.validated_data['user']['groups']
@@ -196,7 +219,7 @@ class EmployeViewset(viewsets.ModelViewSet):
 			user.save()
 		utilisateur.save()
 		serializer = UtilisateurSerializer(utilisateur, many=False).data
-		return Response({"status": "Utilisateur cree avec succès"}, 201)
+		return Response({"status": "Employe cree avec succès"}, 201)
 
 	@transaction.atomic()
 	@action(methods=['GET'], detail=False, url_path=r"reset/(?P<email>[a-zA-Z0-9.@]+)", url_name=r'reset')
@@ -256,6 +279,29 @@ class CongeViewSet(viewsets.ModelViewSet):
 	permission_classes = IsAuthenticated,
 	queryset = Conge.objects.all()
 	serializer_class = LeaveSerializer
+
+	@transaction.atomic
+	def create(self, request):
+		data = self.request.data
+		service = Conge(
+			user = self.request.user,
+			date_de_debut = (data.get('date_de_debut')),
+			date_de_fin = (data.get('date_de_fin')),
+			type_de_conge = (data.get('type_de_conge')),
+			raison = (data.get('raison'))
+			)
+		service.save()
+		serializer = LeaveSerializer(service, many=False, context={"request":request}).data
+		return Response(serializer,200)
+	
+	def patch(self, request, *args, **kwargs):
+		return self.update(request, *args, **kwargs)
+
+	@transaction.atomic
+	def destroy(self, request, *args, **kwargs):
+		service = self.get_object()
+		service.delete()
+		return Response(None, 204)
 
 
 class QuotationViewSet(viewsets.ModelViewSet):

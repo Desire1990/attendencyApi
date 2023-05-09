@@ -131,6 +131,7 @@ db*.sqlite3
 **/__pycache__
 **/migrations
 image/*
+*.tar.gz
 fixtures/*
 mcd_lab.png
 media/*

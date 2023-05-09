@@ -17,12 +17,12 @@ class TokenPairSerializer(TokenObtainPairSerializer):
 		data['username'] = self.user.username
 		data['first_name'] = self.user.first_name
 		data['last_name'] = self.user.last_name
-		if self.user.utilisateur.agence:
-			var = self.user.utilisateur
-			data['agence'] = AgenceSerializer(var.agence, many=False).data
-		if self.user.utilisateur.service:
-			var = self.user.utilisateur
-			data['service'] = ServiceSerializer(var.service, many=False).data
+		# if self.user.utilisateur.agence:
+		# 	var = self.user.utilisateur
+		# 	data['agence'] = AgenceSerializer(var.agence, many=False).data
+		# if self.user.utilisateur.service:
+		# 	var = self.user.utilisateur
+		# 	data['service'] = ServiceSerializer(var.service, many=False).data
 		data['is_staff'] = self.user.is_staff
 		return data
 
@@ -70,13 +70,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class AgenceSerializer(serializers.ModelSerializer):
-	def to_representation(self, instance):
-		representation = super().to_representation(instance)
-		representation['user'] = UserSerializer(instance.user, many=False).data
-		user = UserSerializer(instance.user, many=False).data
-		representation['user'] = {'id': user.get(
-			'id'), 'username': user.get('username')}
-		return representation
 
 	class Meta:
 		model = Agence
@@ -84,12 +77,6 @@ class AgenceSerializer(serializers.ModelSerializer):
 
 
 class ServiceSerializer(serializers.ModelSerializer):
-	def to_representation(self, instance):
-		representation = super().to_representation(instance)
-		representation['user'] = UserSerializer(instance.user, many=False).data
-		representation['agence'] = AgenceSerializer(instance.agence, many=False).data
-		return representation
-
 	class Meta:
 		model = Service
 		fields = "__all__"
@@ -128,13 +115,23 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 		if password:
 			user.set_password(password)
 
-		instance.departement = validated_data.get('departement', instance.departement)
+		instance.service = validated_data.get('service', instance.service)
 		instance.agence = validated_data.get('agence', instance.agence)
+
+		instance.date_naissance = validated_data.get('date_naissance', instance.date_naissance)
+		instance.education = validated_data.get('education', instance.education)
+		instance.fingerprint = validated_data.get('fingerprint', instance.fingerprint)
+		instance.genre = validated_data.get('genre', instance.genre)
+		instance.addresse = validated_data.get('addresse', instance.addresse)
+		instance.matricule = validated_data.get('matricule', instance.matricule)
+		instance.mobile = validated_data.get('mobile', instance.mobile)
+		instance.avatar = validated_data.get('avatar', instance.avatar)
+		instance.status = validated_data.get('status', instance.status)
 		group_user = user_data.get('groups')
 		print(user)
-		print(group_user)
-		user.groups.clear()
-		user.groups.add(group_user[0])
+		# print(group_user)
+		# user.groups.clear()
+		# user.groups.add(group_user[0])
 		user.save()
 		instance.save()
 		return instance
@@ -152,22 +149,24 @@ class PasswordResetSerializer(serializers.Serializer):
 class AttendanceSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Presence
-		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
 		fields = '__all__'
 		depth=1
 
 
 class LeaveSerializer(serializers.ModelSerializer):
+
+	def to_representation(self, obj):
+		representation = super(LeaveSerializer, self).to_representation(obj)
+		representation['user'] = str(obj.user)
+		return representation
 	class Meta:
 		model = Conge
-		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
 		fields = '__all__'
-		depth=1
+		# depth=1
 
 
 class QuotationSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Quotation
-		# fields = ('id','category','status','unite','status', 'materiel','designation','reference', 'quantite','unite', 'get_absolute_url', 'date_peremption')
 		fields = '__all__'
 		depth=1
