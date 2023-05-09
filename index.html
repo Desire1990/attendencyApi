@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>big charts - Admin panel dashboard card design usign html and css - www.pakainfo.com</title>
+<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="https://fonts.googleapis.com/css?family=Raleway:100,200,400,500,600" rel="stylesheet" type="text/css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+
+<style type="text/css">
+body {  
+  padding: 16px;
+  background-color: #e8e8e8;
+}
+/* See http://www.chartjs.org/docs/latest/general/responsive.html */
+.chart-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+.isResizable {
+  background-color: #ffffff;
+  margin: 0px auto;
+  padding: 5px;
+  border: 1px solid #d8d8d8;
+  overflow: hidden;
+  /* Not usable in IE */
+  /* resize: both; */
+  
+  width: 800px;
+  height: 400px;
+  min-width: 280px;
+  min-height: 280px;
+  max-width: 1200px;
+  max-height: 600px;
+}
+#updateChart {
+    background: white;
+    border: 1px solid #d8d8d8;
+    width: 160px;
+    padding: 10px;
+}
+</style>
+</head>
+<body>
+<div class="container-fluid">
+  <h2>big charts Example</h2>
+  <p>The Investor and Traders web site</p>
+  <p>BigCharts is the world's leading and most advanced investment charting and research site.</p>
+  <div class="row">
+    <div class="col-sm-6" style="background-color:lavender;">
+       <div class="isResizable">
+     <div class="chart-container">
+       <canvas id="chart1"></canvas>
+     </div>
+   </div>
+    </div>
+    <div class="col-sm-6" style="background-color:lavenderblush;">
+       <div class="isResizable">
+        <div class="chart-container">
+          <canvas id="chart2"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+<hr/>
+  <div class="row">
+    <div class="col-sm-6" style="background-color:lavender;">
+       <div class="isResizable">
+        <div class="chart-container">
+          <canvas id="chart3"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6" style="background-color:lavender;">
+       <div class="isResizable">
+        <div class="chart-container">
+          <canvas id="chart4"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<hr/>
+  <div class="row">
+    <div class="col-sm-6" style="background-color:lavender;">
+       <div class="isResizable">
+        <div class="chart-container">
+          <canvas id="chart5"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-6" style="background-color:lavender;">
+       <div class="isResizable">
+        <div class="chart-container">
+          <canvas id="chart6"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+
+</html>
