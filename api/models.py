@@ -1,7 +1,7 @@
 from django.db import models
 import random
 from django.utils import timezone
-import datetime
+from datetime import datetime, timedelta
 import time
 from django.contrib.auth.models import User
 
@@ -106,10 +106,9 @@ class Conge(models.Model):
 	date_de_fin = models.DateField(help_text='coming back on ...',null=True,blank=False)
 	type_de_conge = models.CharField(choices=LEAVE_TYPE,max_length=25,null=True,blank=False)
 	raison = models.CharField(max_length=255,help_text='ajouter des informations supplémentaires pour le congé',null=True,blank=True)
-	jours_par_defaut = models.PositiveIntegerField( default=20)
+	jours_par_defaut = models.DateTimeField(default=timedelta(days=20))
 	statut = models.CharField(max_length=12,default='pending') #pending,approved,rejected,cancelled
 	is_approved = models.BooleanField(default=False) #hide
-	updated = models.DateTimeField(auto_now=True, auto_now_add=False)
 	created = models.DateTimeField(auto_now=False, auto_now_add=True)
 
 	def __str__(self):

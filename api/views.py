@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from .dependencies import *
 
 
@@ -290,6 +291,14 @@ class CongeViewSet(viewsets.ModelViewSet):
 			type_de_conge = (data.get('type_de_conge')),
 			raison = (data.get('raison'))
 			)
+		d1 = datetime.strptime(str(service.date_de_debut), '%Y-%m-%d')
+		d2 = datetime.strptime(str(service.date_de_fin), '%Y-%m-%d') 
+		days = d2-d1
+		print(days)
+		print(d1)
+		print(d2)
+		# service.jours_par_defaut-= (days)
+		print(service.jours_par_defaut)
 		service.save()
 		serializer = LeaveSerializer(service, many=False, context={"request":request}).data
 		return Response(serializer,200)
