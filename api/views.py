@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from .dependencies import *
 
 
@@ -291,10 +291,10 @@ class CongeViewSet(viewsets.ModelViewSet):
 			type_de_conge = (data.get('type_de_conge')),
 			raison = (data.get('raison'))
 			)
-		d1 = datetime.strptime(str(service.date_de_debut), '%Y-%m-%d')
-		d2 = datetime.strptime(str(service.date_de_fin), '%Y-%m-%d') 
-		days = d2-d1
-		print(days)
+		d1 = date(int(service.date_de_debut), '%Y/%m/%d')
+		d2 = date(int(service.date_de_fin), '%Y/%m/%d')
+		days_in = (d2-d1)
+		print(days_in.days)
 		print(d1)
 		print(d2)
 		# service.jours_par_defaut-= (days)
