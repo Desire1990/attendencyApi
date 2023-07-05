@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, date
 from .dependencies import *
+from django.utils import timezone
 
 
 class Pagination(PageNumberPagination):
@@ -113,11 +114,9 @@ class AgenceViewset(viewsets.ModelViewSet):
 	@transaction.atomic
 	def create(self, request):
 		data = self.request.data
-		nom = (data.get('nom'))
-		description = (data.get('description'))
 		agence = Agence(
-			nom=nom,
-			description=description,
+			nom= data.get('nom'),
+			description = (data.get('description'))
 			)
 		agence.save()
 		serializer = AgenceSerializer(agence, many=False, context={"request":request}).data
@@ -166,8 +165,8 @@ class ServiceViewset(viewsets.ModelViewSet):
 class EmployeViewset(viewsets.ModelViewSet):
 	serializer_class = UtilisateurSerializer
 	queryset = Employe.objects.all().order_by('-id')
-	#authentication_classes = [JWTAuthentication, SessionAuthentication]
-	#permission_classes = IsAuthenticated,
+	authentication_classes = [JWTAuthentication, SessionAuthentication]
+	permission_classes = IsAuthenticated,
 	filter_backends = [DjangoFilterBackend, filters.SearchFilter]
 	filterset_fields = {
 		'service': ['exact'],
@@ -175,52 +174,6 @@ class EmployeViewset(viewsets.ModelViewSet):
 	}
 	search_fields = ['user__username', 'user__first_name',
 					 'user__last_name', 'service__nom', 'agence__nom']
-
-	@transaction.atomic()
-	def create(self, request):
-		serializer = self.get_serializer(data=request.data)
-		serializer.is_valid(raise_exception=True)
-		service = serializer.validated_data['service']
-		agence = serializer.validated_data['agence']
-		date_naissance = serializer.validated_data['date_naissance']
-		education = serializer.validated_data['education']
-		fingerprint = serializer.validated_data['fingerprint']
-		genre = serializer.validated_data['genre']
-		status = serializer.validated_data['status']
-		addresse = serializer.validated_data['addresse']
-		matricule = serializer.validated_data['matricule']
-		mobile = serializer.validated_data['mobile']
-		avatar = serializer.validated_data['avatar']
-		user = User(
-			username=serializer.validated_data['user']['username'],
-			first_name=serializer.validated_data['user']['first_name'],
-			last_name=serializer.validated_data['user']['last_name'],
-			email=serializer.validated_data['user']['email']
-		)
-		user.set_password(serializer.validated_data['user']['password'])
-		utilisateur = Employe(
-			user=user,
-			service=service,
-			avatar=avatar,
-			agence=agence,
-			date_naissance=date_naissance,
-			education=education,
-			fingerprint=fingerprint,
-			genre=genre,
-			status=status,
-			matricule=matricule,
-			addresse=addresse,
-			mobile=mobile,
-		)
-		user.save()
-		groups = serializer.validated_data['user']['groups']
-		print(serializer.validated_data['user'])
-		for group in groups:
-			user.groups.add(group)
-			user.save()
-		utilisateur.save()
-		serializer = UtilisateurSerializer(utilisateur, many=False).data
-		return Response({"status": "Employe cree avec succès"}, 201)
 
 	@transaction.atomic()
 	@action(methods=['GET'], detail=False, url_path=r"reset/(?P<email>[a-zA-Z0-9.@]+)", url_name=r'reset')
@@ -274,12 +227,64 @@ class PresenceViewSet(viewsets.ModelViewSet):
 	queryset = Presence.objects.all()
 	serializer_class = AttendanceSerializer
 
+	def get_queryset(self):
+		du = self.request.query_params.get('du')
+		au = self.request.query_params.get('au')
+
+		if self.request.user.is_superuser:
+			queryset = (Presence.objects.all())
+		else:
+			queryset = Presence.objects.filter(user=self.request.user)#all().order_by('-id')
+		if du is not None:
+			queryset = queryset.filter(date__gte=du, date__lte=au)
+		return queryset.order_by('-id')
+
+
+	@transaction.atomic
+	def create(self, request):
+		data = self.request.data
+		ps = Presence(
+			user = self.request.user,
+			first_in = str(data.get('first_in')),
+			# last_out = data.get('last_out'),
+			status = data.get('status'),
+			)
+		ps.first_in = str(timezone.localtime().hour) +':'+str(timezone.localtime().minute)+':'+str(timezone.localtime().second)
+		ps.save()
+		serializer = AttendanceSerializer(ps, many=False, context={'request':request}).data
+		return Response(serializer, 200)
+
+	@transaction.atomic
+	def update(self, request, pk):
+		data = request.data
+		last = str(timezone.localtime().hour) +':'+str(timezone.localtime().minute)+':'+str(timezone.localtime().second)
+		ps=self.get_object()
+		ps.last_out = last
+		ps.hours =str(datetime.strptime(last,'%H:%M:%S') - datetime.strptime(str(ps.first_in), '%H:%M:%S'))
+		print((ps.hours))
+		ps.is_approved = True
+		ps.save()
+		serializer = AttendanceSerializer(ps, many=False).data
+		return Response(serializer,200)
 
 class CongeViewSet(viewsets.ModelViewSet):
 	authentication_classes = [JWTAuthentication, SessionAuthentication]
 	permission_classes = IsAuthenticated,
 	queryset = Conge.objects.all()
 	serializer_class = LeaveSerializer
+
+	def get_queryset(self):
+		du = self.request.query_params.get('du')
+		au = self.request.query_params.get('au')
+
+		if self.request.user.is_superuser:
+			queryset = Conge.objects.all()#.order_by('-id')
+		else:
+			queryset = Conge.objects.filter(user=self.request.user)#all().order_by('-id')
+			print(self.request.user.employe.service.id)
+		if du is not None:
+			queryset = queryset.filter(date__gte=du, date__lte=au)
+		return queryset.order_by('-id')
 
 	@transaction.atomic
 	def create(self, request):
@@ -291,14 +296,10 @@ class CongeViewSet(viewsets.ModelViewSet):
 			type_de_conge = (data.get('type_de_conge')),
 			raison = (data.get('raison'))
 			)
-		d1 = date(int(service.date_de_debut), '%Y/%m/%d')
-		d2 = date(int(service.date_de_fin), '%Y/%m/%d')
-		days_in = (d2-d1)
-		print(days_in.days)
-		print(d1)
-		print(d2)
-		# service.jours_par_defaut-= (days)
-		print(service.jours_par_defaut)
+		# jours = str(service.date_de_fin - service.date_de_debut)
+		# print(jours.days)
+		# print(type(jours.days))
+		# service.jours_par_defaut=jours.days
 		service.save()
 		serializer = LeaveSerializer(service, many=False, context={"request":request}).data
 		return Response(serializer,200)
@@ -307,7 +308,23 @@ class CongeViewSet(viewsets.ModelViewSet):
 		return self.update(request, *args, **kwargs)
 
 	@transaction.atomic
-	def destroy(self, request, *args, **kwargs):
+	def update(self, request, pk):
+		data = request.data
+		conge=self.get_object()
+		conge.is_approved = True
+		conge.statut = "approved"
+		jours = conge.date_de_fin - conge.date_de_debut
+		conge.jours_par_defaut=jours.days
+		if conge.jours_par_defaut <= conge.sold:
+			conge.sold-=jours.days
+		else:
+			return Response({'status':'Solde jamais etre negatif'}, 204)
+		conge.save()
+		serializer = LeaveSerializer(conge, many=False).data
+		return Response(serializer,200)
+
+	@transaction.atomic
+	def destroy(self, request, pk, *args, **kwargs):
 		service = self.get_object()
 		service.delete()
 		return Response(None, 204)
