@@ -94,47 +94,30 @@ class UtilisateurSerializer(serializers.ModelSerializer):
 		return representation
 	user = UserSerializer()
 
-	def update(self, instance, validated_data):
-		user = instance.user
-		print(validated_data)
+
+	@transaction.atomic
+	def create(self, validated_data):
 		user_data = validated_data.pop('user')
-		username = user_data.get('username')
-		first_name = user_data.get('first_name')
-		last_name = user_data.get('last_name')
-		email = user_data.get('email')
-		password = user_data.get('password')
+		user = User(
+			username = user_data['username'],
+			first_name = user_data['first_name'],
+			last_name = user_data['last_name'],
+			email = user_data['email'],
+		)
+		password = user_data['password']
+		user.is_active = True
+		user.set_password(password)
 
-		if username:
-			user.username = username
-		if first_name:
-			user.first_name = first_name
-		if last_name:
-			user.last_name = last_name
-		if email:
-			user.email = email
-		if password:
-			user.set_password(password)
-
-		instance.service = validated_data.get('service', instance.service)
-		instance.agence = validated_data.get('agence', instance.agence)
-
-		instance.date_naissance = validated_data.get('date_naissance', instance.date_naissance)
-		instance.education = validated_data.get('education', instance.education)
-		instance.fingerprint = validated_data.get('fingerprint', instance.fingerprint)
-		instance.genre = validated_data.get('genre', instance.genre)
-		instance.addresse = validated_data.get('addresse', instance.addresse)
-		instance.matricule = validated_data.get('matricule', instance.matricule)
-		instance.mobile = validated_data.get('mobile', instance.mobile)
-		instance.avatar = validated_data.get('avatar', instance.avatar)
-		instance.status = validated_data.get('status', instance.status)
-		group_user = user_data.get('groups')
-		print(user)
-		# print(group_user)
-		# user.groups.clear()
-		# user.groups.add(group_user[0])
+		employe = Employe(
+			user = user,
+			service = self.validated_data["service"],
+			agence = self.validated_data["agence"],
+			matricule = self.validated_data["matricule"],
+			date_naissance = self.validated_data["date_naissance"],
+		)
 		user.save()
-		instance.save()
-		return instance
+		employe.save()
+		return employe
 
 	class Meta:
 		model = Employe
@@ -147,11 +130,11 @@ class PasswordResetSerializer(serializers.Serializer):
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
+
 	class Meta:
 		model = Presence
-		fields = '__all__'
-		depth=1
-
+		fields = ('id', 'user', 'date', 'first_in', 'last_out', 'status', 'hours', 'is_approved')
+		depth = 1
 
 class LeaveSerializer(serializers.ModelSerializer):
 
@@ -161,7 +144,8 @@ class LeaveSerializer(serializers.ModelSerializer):
 		return representation
 	class Meta:
 		model = Conge
-		fields = '__all__'
+		fields=('id','user', 'date_de_fin', 'date_de_debut', 'statut','type_de_conge','jours_par_defaut','sold', 'raison', 'is_approved')
+		# fields = '__all__'
 		# depth=1
 
 
